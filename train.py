@@ -23,10 +23,7 @@ def live_plot(log_file):
     plt.ion()
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
     fig.suptitle("FDRL Training Metrics")
-    ax1.set_ylabel("Cumulative Reward (Moving Avg)")
-    ax2.set_ylabel("Loss")
-    ax2.set_xlabel("Epoch")
-
+    
     while True:
         try:
             if not plt.get_fignums(): break
@@ -36,15 +33,22 @@ def live_plot(log_file):
                 continue
 
             df = pd.DataFrame(logs)
+            epochs = df['epoch']
+            
+            # --- ADDED SMOOTHING ---
             reward_ma = df['cumulative_reward'].rolling(window=10, min_periods=1).mean()
+            
             ax1.clear(); ax1.grid(True)
-            ax1.plot(df['epoch'], df['cumulative_reward'], alpha=0.3)
-            ax1.plot(df['epoch'], reward_ma, color='red', linewidth=2)
-            ax1.legend(['Reward per Epoch', '10-Epoch MA'])
+            ax1.set_ylabel("Cumulative Reward")
+            ax1.plot(epochs, df['cumulative_reward'], label='Reward per Epoch', alpha=0.3)
+            ax1.plot(epochs, reward_ma, label='10-Epoch Moving Average', color='red', linewidth=2)
+            ax1.legend()
             
             ax2.clear(); ax2.grid(True)
-            ax2.plot(df['epoch'], df['actor_loss'], label='Actor Loss')
-            ax2.plot(df['epoch'], df['critic_loss'], label='Critic Loss')
+            ax2.set_ylabel("Loss")
+            ax2.set_xlabel("Epoch")
+            ax2.plot(epochs, df['actor_loss'], label='Actor Loss')
+            ax2.plot(epochs, df['critic_loss'], label='Critic Loss')
             ax2.legend()
             
             plt.tight_layout(rect=[0, 0, 1, 0.96]); plt.draw(); plt.pause(5)

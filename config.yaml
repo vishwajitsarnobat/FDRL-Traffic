@@ -6,7 +6,8 @@ sumo:
   step_length: 1.0          # Duration of a single simulation step in seconds
   gui: false                # Run with SUMO GUI during training (set to true in infer.py)
   queue_detection_distance: 150 # Distance from junction to count a vehicle as 'queued'
-
+  gridlock_detection_time: 300.0 
+  
 # ----------------------------------
 # Federated Deep RL Configuration
 # ----------------------------------
