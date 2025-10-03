@@ -175,12 +175,65 @@ Before running this project, please ensure your environment meets the following 
 
 *   **Version:** `3.12` (as specified in the `.python-version` file).
 
-### 3. Python Libraries
+### 3. Python Environment and Dependencies
 
-Install all required libraries using the following pip command:
-```bash
-pip install torch numpy pandas matplotlib ruamel.yaml pyyaml
-```
+To ensure a clean and reproducible environment, it is highly recommended to use a virtual environment. We recommend using **`uv`**, a next-generation Python package manager that is extremely fast and serves as a drop-in replacement for `pip` and `venv`.
+
+#### Recommended: Using `uv` (Fastest Method)
+
+`uv` can create a virtual environment and install packages 10-100x faster than `pip`.
+
+1.  **Install `uv`** (if you don't have it already):
+    ```bash
+    # On macOS and Linux
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+
+    # On Windows
+    irm https://astral.sh/uv/install.ps1 | iex
+    ```
+    You can also install it via `pip`: `pip install uv`.
+
+2.  **Create and activate the virtual environment** using `uv`:
+    ```bash
+    # Create the virtual environment
+    uv venv
+
+    # Activate it (macOS/Linux)
+    source .venv/bin/activate
+
+    # Activate it (Windows PowerShell)
+    .venv\Scripts\Activate.ps1
+    ```
+
+3.  **Install the required libraries** using `uv`:
+    ```bash
+    uv sync # Directly install dependencies if cloned from repository
+    # OR Manually install dependencies
+    uv add install torch numpy pandas matplotlib ruamel.yaml pyyaml
+    ```
+
+#### Alternative: Using standard `pip` and `venv`
+
+If you prefer not to use `uv`, you can follow the traditional approach.
+
+1.  **Create the virtual environment:**
+    ```bash
+    python3 -m venv .venv
+    ```
+
+2.  **Activate it:**
+    ```bash
+    # On macOS and Linux
+    source .venv/bin/activate
+
+    # On Windows PowerShell
+    .venv\Scripts\Activate.ps1
+    ```
+
+3.  **Install the required libraries** using `pip`:
+    ```bash
+    pip install torch numpy pandas matplotlib ruamel.yaml pyyaml
+    ```
 
 ## Step-by-Step Usage Guide
 
