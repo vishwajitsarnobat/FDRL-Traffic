@@ -1,19 +1,22 @@
-# federated_server.py (CORRECTED with Full Locking)
-
 import socket
 import pickle
 import threading
 import torch
-import yaml
 import json
 import numpy as np
 from collections import OrderedDict
 from ppo_agent import PPOAgent
+from lightning.fabric import Fabric
 import os
 
 class FederatedServer:
     def __init__(self, config):
         self.config = config
+        
+        # Initialize Fabric
+        self.fabric = Fabric(accelerator="auto", devices=1)
+        self.fabric.launch()
+        
         self.host = config['system']['server_host']
         self.port = config['system']['server_port']
         self.num_clients = len(config['system']['controlled_junctions'])
@@ -26,25 +29,17 @@ class FederatedServer:
         self.training_logs = []
         
         self.lock = threading.Lock()
-        
-        # The barrier's action will now be the locked aggregation function
         self.barrier = threading.Barrier(self.num_clients, action=self.locked_aggregate_and_log)
 
     def _initialize_global_agent(self, state_dim, action_dim):
         if self.global_agent is None:
             print(f"Initializing global agent with state_dim={state_dim}, action_dim={action_dim}")
-            self.global_agent = PPOAgent(state_dim, action_dim, self.config)
+            self.global_agent = PPOAgent(state_dim, action_dim, self.config, fabric=self.fabric)
 
     def locked_aggregate_and_log(self):
-        """
-        This is the barrier's action function. By placing the lock here, we guarantee
-        that the entire aggregation, logging, and clearing process is atomic,
-        preventing any race conditions.
-        """
         with self.lock:
             print("\n--- Barrier Reached: Aggregating models ---")
             
-            # 1. Aggregate Weights
             alpha = self.config['fdrl']['alpha']
             global_state_dict = self.global_agent.actor.state_dict()
             aggregated_state_dict = OrderedDict([(key, alpha * global_state_dict[key]) for key in global_state_dict])
@@ -54,13 +49,17 @@ class FederatedServer:
                 aggregation_weight_p_i = 1.0 / num_clients_in_round
                 for local_state_dict in self.client_weights.values():
                     for key in local_state_dict:
-                        aggregated_state_dict[key] += (1 - alpha) * aggregation_weight_p_i * local_state_dict[key]
+                        # Move to device if needed
+                        if self.fabric:
+                            local_tensor = local_state_dict[key].to(self.fabric.device)
+                        else:
+                            local_tensor = local_state_dict[key]
+                        aggregated_state_dict[key] += (1 - alpha) * aggregation_weight_p_i * local_tensor
                 
                 self.global_agent.actor.load_state_dict(aggregated_state_dict)
                 self.global_agent.actor_old.load_state_dict(aggregated_state_dict)
                 print("Global model aggregated successfully.")
 
-            # 2. Log Performance
             if self.epoch_logs:
                 avg_reward = np.mean([log['cumulative_reward'] for log in self.epoch_logs.values()])
                 avg_actor_loss = np.mean([log['actor_loss'] for log in self.epoch_logs.values()])
@@ -77,10 +76,8 @@ class FederatedServer:
                 print(f"Epoch {current_epoch} Summary: Avg Reward={avg_reward:.2f}, "
                       f"Avg Actor Loss={avg_actor_loss:.4f}, Avg Critic Loss={avg_critic_loss:.4f}\n")
             
-            # 3. Clear dictionaries for the next round
             self.client_weights.clear()
             self.epoch_logs.clear()
-
 
     def handle_client(self, client_socket, client_address):
         print(f"Accepted connection from {client_address}")
@@ -94,14 +91,12 @@ class FederatedServer:
                     self._initialize_global_agent(meta_data['state_dim'], meta_data['action_dim'])
 
             for epoch in range(self.config['fdrl']['epochs']):
-                # 1. Broadcast global model
                 with self.lock:
-                    global_weights = self.global_agent.actor.state_dict()
+                    global_weights = {k: v.cpu() for k, v in self.global_agent.actor.state_dict().items()}
                 data_bytes = pickle.dumps(global_weights)
                 client_socket.sendall(len(data_bytes).to_bytes(8, 'big'))
                 client_socket.sendall(data_bytes)
                 
-                # 2. Receive local model and logs
                 data_size = int.from_bytes(client_socket.recv(8), 'big')
                 received_data = b""
                 while len(received_data) < data_size:
@@ -112,7 +107,6 @@ class FederatedServer:
                 if not received_data: break
                 payload = pickle.loads(received_data)
                 
-                # 3. Store data (protected by lock) and wait at the barrier
                 with self.lock:
                     self.client_weights[client_id] = payload['weights']
                     self.epoch_logs[client_id] = payload['log']

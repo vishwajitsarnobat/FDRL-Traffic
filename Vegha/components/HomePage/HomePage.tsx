@@ -89,7 +89,7 @@ const ProjectVeghaLanding = () => {
       
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-50 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+        <div className="max-w-screen mx-auto px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-lg">
               <Zap className="w-5 h-5 text-white" />
@@ -104,14 +104,14 @@ const ProjectVeghaLanding = () => {
             <button className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors">
               Contact Us
             </button>
-            <button className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-all">
+            {/* <button className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 px-4 py-2 rounded-lg transition-all">
               <LogIn className="w-4 h-4" />
               <span>Login</span>
             </button>
             <button className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all shadow-lg hover:shadow-xl">
               <User className="w-4 h-4" />
               <span>Sign Up</span>
-            </button>
+            </button> */}
           </div>
         </div>
       </nav>
@@ -191,7 +191,7 @@ const ProjectVeghaLanding = () => {
 
       {/* Problem Section */}
       <section className="py-24 px-6 bg-white dark:bg-gray-900">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen mx-auto">
           <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 30 }}
@@ -265,7 +265,7 @@ const ProjectVeghaLanding = () => {
 
       {/* Solution Section */}
       <section className="py-24 px-6 bg-gradient-to-br from-blue-100 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen mx-auto">
           <motion.div
             className="text-center mb-20"
             initial={{ opacity: 0, y: 30 }}
@@ -398,7 +398,7 @@ const ProjectVeghaLanding = () => {
 
       {/* Impact Section */}
       <section className="py-24 px-6 bg-gradient-to-br from-blue-100 to-indigo-50 dark:from-gray-800 dark:to-gray-900">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-screen mx-auto">
           <motion.div
             className="text-center mb-20"
             initial={{ opacity: 0, y: 30 }}
