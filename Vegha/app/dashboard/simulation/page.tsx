@@ -49,7 +49,10 @@ export default function SimulationPage() {
 
   useEffect(() => {
     // Initialize Socket.IO connection
-    const socketInstance = io('http://localhost:5000', {
+    const socketServerUrl = process.env.NEXT_PUBLIC_SOCKET_IO_URL || 'http://localhost:5000';
+
+    // Initialize Socket.IO connection with the correct URL
+    const socketInstance = io(socketServerUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
