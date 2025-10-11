@@ -186,7 +186,7 @@ export default function Sumo3DViewer() {
               Pause
             </button>
             <button
-              onClick={reactSimulation}
+              onClick={resetSimulation}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
               disabled={!isConnected}
             >
