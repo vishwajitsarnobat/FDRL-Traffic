@@ -1,42 +1,46 @@
-# sumo_server/Dockerfile
-
-# STEP 1: Start from the stable, full-featured Ubuntu 22.04 LTS image
+# STEP 1: Start from the stable Ubuntu 22.04 LTS image
 FROM ubuntu:22.04
 
-# Prevent interactive popups during package installation
+# Prevent interactive prompts during package installs
 ENV DEBIAN_FRONTEND=noninteractive
 
-# STEP 2: Install system dependencies, add PPAs, and install Python/SUMO
+# STEP 2: Install system dependencies, Python 3.12, SUMO tools, and distutils
 RUN apt-get update && \
     apt-get install -y software-properties-common gnupg && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     add-apt-repository -y ppa:sumo/stable && \
     apt-get update && \
-    # Install python3.12-dev and python3.12-venv to ensure all headers and tools are available
-    apt-get install -y python3.12 python3.12-dev python3-pip sumo sumo-tools sumo-doc && \
+    apt-get install -y \
+        python3.12 \
+        python3.12-dev \
+        python3.12-distutils \
+        python3.12-venv \
+        python3-pip \
+        sumo \
+        sumo-tools \
+        sumo-doc && \
     rm -rf /var/lib/apt/lists/*
 
-# STEP 3: Fix the broken pip/distutils issue in Python 3.12
-# This is the crucial new step.
+# STEP 3: Upgrade pip, setuptools, wheel for Python 3.12
 RUN python3.12 -m pip install --upgrade pip setuptools wheel
 
-# Set the working directory for our application
+# Set working directory
 WORKDIR /app
 
-# Set environment variables so Python can find the 'traci' library
+# Environment variables for SUMO tools
 ENV SUMO_HOME=/usr/share/sumo
 ENV PYTHONPATH="${SUMO_HOME}/tools"
 
-# Copy and install our Python application's dependencies
+# Copy and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python3.12 -m pip install --no-cache-dir -r requirements.txt
 
-# Copy the application code and the SUMO map files into the image
+# Copy application code and SUMO maps
 COPY . .
 COPY Berlin ./Berlin
 
-# Expose the port our server will run on
+# Expose server port
 EXPOSE 5000
 
-# Define the command to start our production server
+# Command to start server with Gunicorn using eventlet workers
 CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "server:app"]
