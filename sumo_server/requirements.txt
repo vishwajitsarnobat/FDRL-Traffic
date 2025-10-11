@@ -1,0 +1,6 @@
+# sumo_server/requirements.txt
+Flask
+Flask-SocketIO
+python-engineio==4.3.4
+python-socketio==5.7.1
+simple-websocket==0.10.0
