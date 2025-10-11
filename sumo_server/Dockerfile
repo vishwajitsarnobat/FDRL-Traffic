@@ -34,3 +34,9 @@ ENV FLASK_APP=server.py
 
 # The command to run the application when the container launches
 CMD ["python", "-u", "server.py"]
+
+# Set the SUMO_HOME environment variable (standard path for Debian install)
+ENV SUMO_HOME=/usr/share/sumo
+
+# Add SUMO tools to the Python path so it can find the traci library
+ENV PYTHONPATH="${SUMO_HOME}/tools:${PYTHONPATH}"
