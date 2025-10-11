@@ -6,25 +6,19 @@ FROM ubuntu:22.04
 # Prevent interactive popups during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# --- THE CORRECTED, COMBINED INSTALLATION BLOCK ---
+# STEP 2: Install system dependencies, add PPAs, and install Python/SUMO
 RUN apt-get update && \
-    # 1. Install the basic tools needed to add new software repositories
     apt-get install -y software-properties-common gnupg && \
-    \
-    # 2. Add the PPA for the latest Python versions ("deadsnakes")
     add-apt-repository -y ppa:deadsnakes/ppa && \
-    \
-    # 3. Add the PPA for the latest stable SUMO version
     add-apt-repository -y ppa:sumo/stable && \
-    \
-    # 4. Refresh the package list AGAIN to include software from our new PPAs
     apt-get update && \
-    \
-    # 5. Now, install everything we need: Python 3.12, pip, and SUMO
-    apt-get install -y python3.12 python3-pip sumo sumo-tools sumo-doc && \
-    \
-    # 6. Clean up downloaded package files to keep the final image smaller
+    # Install python3.12-dev and python3.12-venv to ensure all headers and tools are available
+    apt-get install -y python3.12 python3.12-dev python3-pip sumo sumo-tools sumo-doc && \
     rm -rf /var/lib/apt/lists/*
+
+# STEP 3: Fix the broken pip/distutils issue in Python 3.12
+# This is the crucial new step.
+RUN python3.12 -m pip install --upgrade pip setuptools wheel
 
 # Set the working directory for our application
 WORKDIR /app
@@ -35,8 +29,7 @@ ENV PYTHONPATH="${SUMO_HOME}/tools"
 
 # Copy and install our Python application's dependencies
 COPY requirements.txt .
-# Use python3.12's pip to install the packages
-RUN python3.12 -m pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code and the SUMO map files into the image
 COPY . .
