@@ -1,27 +1,19 @@
 # sumo_server/Dockerfile
 
-# STEP 1: Start from the newer Ubuntu 24.04 LTS image
-FROM ubuntu:24.04
+# STEP 1: Start from the official Python 3.12 image.
+# This image is based on Debian Bookworm and is configured to allow pip installs.
+FROM python:3.12
 
-# Prevent interactive prompts during installation
-ENV DEBIAN_FRONTEND=noninteractive
-
-# --- UPDATED INSTALLATION BLOCK for 24.04 ---
+# STEP 2: Install prerequisites and add the SUMO PPA.
+# We install `software-properties-common` from the Debian testing repository.
 RUN apt-get update && \
-    # 1. Install prerequisites. Python 3.12 is the default `python3` on 24.04, so we install it directly.
-    apt-get install -y python3 python3-pip software-properties-common gnupg && \
-    \
-    # 2. Add the PPA for the latest stable SUMO version.
-    #    (This is the step that may fail if the PPA does not yet support Ubuntu 24.04)
-    add-apt-repository -y ppa:sumo/stable && \
-    \
-    # 3. Refresh the package list to include the SUMO PPA
+    apt-get install -y gnupg lsb-release && \
+    echo "deb http://deb.debian.org/debian testing main" >> /etc/apt/sources.list && \
     apt-get update && \
-    \
-    # 4. Install SUMO from the PPA
+    apt-get install -t testing -y software-properties-common && \
+    add-apt-repository -y ppa:sumo/stable && \
+    apt-get update && \
     apt-get install -y sumo sumo-tools sumo-doc && \
-    \
-    # 5. Clean up downloaded package files
     rm -rf /var/lib/apt/lists/*
 
 # Set the working directory for our application
@@ -31,9 +23,9 @@ WORKDIR /app
 ENV SUMO_HOME=/usr/share/sumo
 ENV PYTHONPATH="${SUMO_HOME}/tools"
 
-# Copy and install our Python application's dependencies
+# Copy and install our Python application's dependencies using pip
 COPY requirements.txt .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code and the SUMO map files into the image
 COPY . .
