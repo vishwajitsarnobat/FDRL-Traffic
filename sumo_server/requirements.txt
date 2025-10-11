@@ -7,3 +7,4 @@ simple-websocket>=0.5.1
 Werkzeug==2.3.8
 gunicorn==21.2.0
 eventlet==0.33.3
+setuptools>=65.5.1
