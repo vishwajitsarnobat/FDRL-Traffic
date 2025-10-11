@@ -8,15 +8,25 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # STEP 2: Install system dependencies, add PPAs, and install Python/SUMO
 RUN apt-get update && \
-    apt-get install -y software-properties-common gnupg python3.12-venv && \
+    # 2a. Install the basic tools needed to add new software repositories
+    apt-get install -y software-properties-common gnupg && \
+    \
+    # 2b. Add the repository for Python 3.12
     add-apt-repository -y ppa:deadsnakes/ppa && \
+    \
+    # 2c. Add the repository for SUMO
     add-apt-repository -y ppa:sumo/stable && \
+    \
+    # 2d. IMPORTANT: Refresh the package list to include software from the new PPAs
     apt-get update && \
-    apt-get install -y python3.12 sumo sumo-tools sumo-doc && \
+    \
+    # 2e. Now that the system knows where to find them, install all packages
+    apt-get install -y python3.12 python3.12-venv sumo sumo-tools sumo-doc && \
+    \
+    # 2f. Clean up downloaded package files
     rm -rf /var/lib/apt/lists/*
 
 # STEP 3: Create a virtual environment
-# This isolates our app's dependencies from the system's Python packages
 ENV VIRTUAL_ENV=/opt/venv
 RUN python3.12 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
@@ -40,5 +50,4 @@ COPY Berlin ./Berlin
 EXPOSE 5000
 
 # Define the command to start our production server
-# This will use the gunicorn from our virtual environment
 CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "server:app"]
