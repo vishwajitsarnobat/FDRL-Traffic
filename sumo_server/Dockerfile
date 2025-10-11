@@ -1,26 +1,32 @@
 # sumo_server/Dockerfile
 
-FROM python:3.12
+# STEP 1: Start from the stable Ubuntu 22.04 image
+FROM ubuntu:22.04
 
-WORKDIR /app
+# Prevent interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# --- THIS IS THE UPDATED BLOCK ---
-# Install prerequisites, add the official SUMO PPA, and install the latest stable SUMO
+# STEP 2: Install Python 3.12 and prerequisites for SUMO PPA
 RUN apt-get update && \
-    apt-get install -y software-properties-common gnupg && \
-    add-apt-repository -y ppa:sumo/stable && \
+    apt-get install -y python3.12 python3-pip software-properties-common gnupg && \
+    rm -rf /var/lib/apt/lists/*
+
+# STEP 3: Add the official SUMO PPA and install the latest SUMO
+RUN add-apt-repository -y ppa:sumo/stable && \
     apt-get update && \
     apt-get install -y sumo sumo-tools sumo-doc && \
     rm -rf /var/lib/apt/lists/*
-# --- END OF UPDATED BLOCK ---
+
+# Set the working directory
+WORKDIR /app
 
 # Set environment variables so Python can find the traci library
 ENV SUMO_HOME=/usr/share/sumo
-ENV PYTHONPATH="${SUMO_HOME}/tools:${PYTHONPATH}"
+ENV PYTHONPATH="${SUMO_HOME}/tools"
 
 # Copy and install Python requirements
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code and the original Berlin map files
 COPY . .
