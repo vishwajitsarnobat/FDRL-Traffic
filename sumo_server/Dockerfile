@@ -32,8 +32,9 @@ EXPOSE 5000
 # Define environment variable for Flask
 ENV FLASK_APP=server.py
 
-# The command to run the application when the container launches
-CMD ["python", "-u", "server.py"]
+# The command to run the application using a production Gunicorn server
+# --worker-class eventlet is CRITICAL for Socket.IO to work
+CMD ["gunicorn", "--worker-class", "eventlet", "-w", "1", "--bind", "0.0.0.0:5000", "server:app"]
 
 # Set the SUMO_HOME environment variable (standard path for Debian install)
 ENV SUMO_HOME=/usr/share/sumo
