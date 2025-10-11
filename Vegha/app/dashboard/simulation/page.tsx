@@ -4,21 +4,16 @@
 import React, { useState, useEffect } from 'react';
 import { io, Socket } from 'socket.io-client';
 import Card from '@/components/Card';
-import { 
-  Activity, 
-  Car, 
-  Clock, 
-  Play, 
-  Pause, 
-  RotateCcw, 
-  TrafficCone, 
-  Timer, 
-  MapPin, 
-  AlertTriangle,
-  TrendingUp,
-  Users,
-  Zap
+import {
+  Activity,
+  Car,
+  Clock,
+  TrafficCone,
+  MapPin,
 } from 'lucide-react';
+
+// --- DEFINE THE URL ONCE HERE ---
+const sumoServerUrl = process.env.NEXT_PUBLIC_SOCKET_IO_URL || 'http://localhost:5000';
 
 interface SimulationMetrics {
   vehicleCount: number;
@@ -31,10 +26,8 @@ interface SimulationMetrics {
 }
 
 export default function SimulationPage() {
-  const [sumoUrl, setSumoUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   
   const [metrics, setMetrics] = useState<SimulationMetrics>({
@@ -42,17 +35,14 @@ export default function SimulationPage() {
     avgSpeed: 0,
     waiting: 0,
     simTime: 0,
-    signals: 12,
+    signals: 0, // Start at 0
     avgWaitTime: 0.0,
     congestionPercent: 0
   });
 
   useEffect(() => {
-    // Initialize Socket.IO connection
-    const socketServerUrl = process.env.NEXT_PUBLIC_SOCKET_IO_URL || 'http://localhost:5000';
-
     // Initialize Socket.IO connection with the correct URL
-    const socketInstance = io(socketServerUrl, {
+    const socketInstance = io(sumoServerUrl, {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
@@ -62,7 +52,7 @@ export default function SimulationPage() {
     socketInstance.on('connect', () => {
       console.log('Connected to SUMO backend via Socket.IO');
       setIsConnected(true);
-      setIsLoading(false);
+      setIsLoading(false); // Stop loading once connected
     });
 
     socketInstance.on('disconnect', () => {
@@ -72,7 +62,8 @@ export default function SimulationPage() {
 
     socketInstance.on('connect_error', (err) => {
       console.error('Socket.IO connection error:', err);
-      setError('Failed to connect to simulation server');
+      setError('Failed to connect to simulation server. Check if the backend is running.');
+      setIsLoading(false);
     });
 
     // Listen for simulation updates
@@ -88,29 +79,13 @@ export default function SimulationPage() {
       });
     });
 
-    setSocket(socketInstance);
-
     // Cleanup on unmount
     return () => {
       socketInstance.disconnect();
     };
   }, []);
 
-  const fetchSumoEndpoint = async () => {
-    try {
-      const response = await fetch('http://localhost:5000/');
-      const data = await response.json();
-      setSumoUrl(data.url || 'http://localhost:5000');
-      setIsLoading(false);
-    } catch (err) {
-      console.error('Error fetching SUMO endpoint:', err);
-      setSumoUrl('http://localhost:5000');
-      setIsLoading(false);
-    }
-  };
-
   const handleRefresh = () => {
-    setIsLoading(true);
     window.location.reload();
   };
 
@@ -124,7 +99,7 @@ export default function SimulationPage() {
               Vegha Traffic Simulation
             </h1>
             <p className="text-gray-400 mt-2 flex items-center gap-2">
-              <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`}></span>
+              <span className={`inline-block w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
               Real-time SUMO traffic simulation with live metrics
             </p>
           </div>
@@ -144,14 +119,14 @@ export default function SimulationPage() {
               <div className="text-center">
                 <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-blue-500 mx-auto mb-4"></div>
                 <p className="text-gray-400 text-lg">
-                  Loading SUMO Simulation...
+                  Connecting to Simulation Server...
                 </p>
               </div>
             </div>
           ) : error ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-red-500">
-                <p className="text-2xl mb-2">⚠️ Error</p>
+                <p className="text-2xl mb-2">⚠️ Connection Error</p>
                 <p className="text-gray-400">{error}</p>
                 <button
                   onClick={handleRefresh}
@@ -163,7 +138,7 @@ export default function SimulationPage() {
             </div>
           ) : (
             <iframe
-              src="http://localhost:5000/"
+              src={sumoServerUrl} // <-- ✨ USE THE DYNAMIC URL
               className="w-full h-full border-0"
               title="SUMO Traffic Simulation"
               allow="fullscreen"
@@ -182,78 +157,47 @@ export default function SimulationPage() {
 
         {/* Metrics Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-6">
+          {/* Cards remain the same */}
           <Card
             title="Simulation Step"
             value={metrics.simTime}
             icon={Activity}
             iconBgColor="bg-gradient-to-br from-blue-500 to-blue-600"
             subtitle="Current simulation step"
-            status={{
-              text: isConnected ? 'Live' : 'Disconnected',
-              color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400',
-              dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-            }}
+            status={{ text: isConnected ? 'Live' : 'Disconnected', color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400', dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500' }}
           />
-          
           <Card
             title="Total Vehicles"
             value={metrics.vehicleCount}
             icon={Car}
             iconBgColor="bg-gradient-to-br from-purple-500 to-indigo-600"
             subtitle="Active vehicles in simulation"
-            status={{
-              text: isConnected ? 'Live count' : 'Static',
-              color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400',
-              dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-            }}
+            status={{ text: isConnected ? 'Live count' : 'Static', color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400', dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500' }}
           />
-          
           <Card
             title="Waiting Vehicles"
             value={metrics.waiting}
             icon={TrafficCone}
             iconBgColor="bg-gradient-to-br from-orange-500 to-red-500"
             subtitle="Vehicles waiting at signals"
-            status={{
-              text: isConnected ? 'Real-time' : 'Calculated',
-              color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400',
-              dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-            }}
+            status={{ text: isConnected ? 'Real-time' : 'Calculated', color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400', dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500' }}
           />
-          
           <Card
             title="Average Speed"
             value={`${metrics.avgSpeed.toFixed(1)} km/h`}
             icon={Clock}
             iconBgColor="bg-gradient-to-br from-green-500 to-emerald-600"
             subtitle="Mean vehicle speed"
-            status={{
-              text: isConnected ? 'Real-time' : 'Calculated',
-              color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400',
-              dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500'
-            }}
+            status={{ text: isConnected ? 'Real-time' : 'Calculated', color: isConnected ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400', dotColor: isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-500' }}
           />
-          
           <Card
             title="Total Signals"
             value={metrics.signals}
             icon={MapPin}
             iconBgColor="bg-gradient-to-br from-cyan-500 to-blue-500"
             subtitle="Traffic signals in network"
-            status={{
-              text: 'Network total',
-              color: 'text-gray-500 dark:text-gray-400',
-              dotColor: 'bg-gray-500'
-            }}
+            status={{ text: 'Network total', color: 'text-gray-500 dark:text-gray-400', dotColor: 'bg-gray-500' }}
           />
-        </div>
-
-        {/* Additional Metrics Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-
-
-
-
         </div>
 
         {/* Connection Info Panel */}
@@ -270,16 +214,12 @@ export default function SimulationPage() {
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-blue-300">Endpoint:</span>
                   <code className="bg-blue-900/50 px-3 py-1 rounded text-blue-200 text-sm font-mono">
-                    http://localhost:5000
+                    {sumoServerUrl} {/* <-- ✨ USE THE DYNAMIC URL */}
                   </code>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-blue-300">Status:</span>
-                  <span className={`px-3 py-1 rounded text-sm font-medium ${
-                    isConnected 
-                      ? 'bg-green-500/20 text-green-300' 
-                      : 'bg-red-500/20 text-red-300'
-                  }`}>
+                  <span className={`px-3 py-1 rounded text-sm font-medium ${isConnected ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'}`}>
                     {isConnected ? '● Connected' : '● Disconnected'}
                   </span>
                 </div>
@@ -289,7 +229,7 @@ export default function SimulationPage() {
                 </div>
               </div>
               <p className="text-sm text-blue-400 mt-3">
-                Make sure SUMO Web3D server is running on the backend. Metrics update in real-time via WebSocket connection.
+                Make sure SUMO server is running on the backend. Metrics update in real-time via WebSocket connection.
               </p>
             </div>
           </div>
