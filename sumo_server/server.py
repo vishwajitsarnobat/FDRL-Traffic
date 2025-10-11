@@ -155,7 +155,7 @@ def get_edge_geometry(edge_id):
 def run_sumo():
     global simulation_running, simulation_paused
     print("Starting SUMO simulation...")
-    traci.start(["sumo", "-c", r"C:\Projects\FDRL-Traffic\FDRL\sumo_files\Berlin\osm.sumocfg"])
+    traci.start(["sumo", "-c", "Berlin/osm.sumocfg"])
     
     load_available_streets()
     

@@ -24,7 +24,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the application code and SUMO scenario files into the container.
 # We must copy the server code and the Berlin map files.
 COPY . .
-COPY ../FDRL/sumo_files/Berlin ./FDRL/sumo_files/Berlin
+COPY Berlin ./Berlin
 
 # Make port 5000 available to the world outside this container
 EXPOSE 5000
