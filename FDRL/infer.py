@@ -46,7 +46,6 @@ def save_final_plots(log_file, junction_ids, mode, output_dir):
             fig.suptitle(f"Final Performance (Mode: {mode.upper()}) - Page {page + 1}/{num_pages}", fontsize=20, y=0.99)
 
             for i, j_id in enumerate(junctions_on_page):
-                # --- BUG FIX: Correctly access the two axes for the current row ---
                 ax1 = axes[i, 0]
                 ax2 = axes[i, 1]
                 
